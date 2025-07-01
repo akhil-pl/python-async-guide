@@ -1,3 +1,5 @@
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/akhil-pl/python-async-guide/blob/main/notebooks/concurrency_demo.ipynb)
+ 
 # Python Async Guide Companion Repository
 
 This repository accompanies the blog post: **"Async in Python Isn't Magic — It's Math"**.
