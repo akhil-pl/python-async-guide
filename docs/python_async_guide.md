@@ -179,7 +179,6 @@ async def compute():
     result = await asyncio.get_event_loop().run_in_executor(executor, complex_calculation)
     return {"result": result}
 ```
-
 2. BackgroundTasks (for non-blocking post-response work).
 3. Celery / RQ (for distributed, scalable background jobs).
 4. ProcessPoolExecutor (for true CPU parallelism).
