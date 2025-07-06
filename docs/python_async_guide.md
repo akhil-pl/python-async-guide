@@ -167,6 +167,7 @@ Even if this is inside an async def, a CPU-heavy task (like parsing large JSON, 
 #### ✅ Solution: Offload CPU Work to Threads or Processes
 Use one of these options:
 1. ThreadPoolExecutor for lightweight CPU-bound tasks (Trade-off: now you're using a thread per request, which limits scalability.):
+
 ```python
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
@@ -178,6 +179,7 @@ async def compute():
     result = await asyncio.get_event_loop().run_in_executor(executor, complex_calculation)
     return {"result": result}
 ```
+
 2. BackgroundTasks (for non-blocking post-response work).
 3. Celery / RQ (for distributed, scalable background jobs).
 4. ProcessPoolExecutor (for true CPU parallelism).
@@ -296,12 +298,14 @@ Would love your thoughts, corrections, or contributions. If this helped, share i
     + Keeps the event loop responsive.
 
 - **Blocking vs Non-Blocking:**
+
     | Term | Meaning |
     |----------|----------|
     | Blocking  | Halts program execution until operation completes (e.g. time.sleep)  |
     | Non-blocking  | Allows execution to continue while waiting (e.g. await asyncio.sleep)  |
 
 - **I/O-Bound vs CPU-Bound:**
+
     | Type | Description | Best Tool |
     |----------|----------|----------|
     | I/O-bound  | Waits on external systems (network, disk)  |  asyncio, threads  |
