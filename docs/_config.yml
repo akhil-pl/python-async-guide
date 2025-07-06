@@ -1,2 +1,8 @@
 title: Python Async Guide
-theme: minima
+remote_theme: just-the-docs/just-the-docs
+plugins:
+  - jekyll-remote-theme
+
+# Optional: enable navigation features
+nav_sort: case_sensitive
+search_enabled: true

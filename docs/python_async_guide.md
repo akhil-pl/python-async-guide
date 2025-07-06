@@ -1,21 +1,28 @@
-# Async in Python Isn't Magic — It's Math: A Deep Dive for Real-World Developers
 # Why Your FastAPI App Isn't Fast: Understanding Python Concurrency
 
+<!-- ![Async FastAPI Banner](./assets/banner.gif) -->
+<p align="center">
+  <img src="./assets/banner.gif" alt="Async FastAPI Banner" width="80%">
+</p>
+ 
 ## 🚦 Introduction: The Hidden Bottleneck
 
 > "We ran a 500-user load test. FastAPI struggled. Turns out — someone used `requests` in an `async def`."
-<!-- ### 📊 Real-World Load Test Results -->
 
-Benchmarked the same FastAPI app with two minor differences: one used requests, the other used httpx. At 20 users, the difference was minor. At 200 users, one of them crumbled.
+Benchmarked the same FastAPI app with two minor differences: one used requests, the other used httpx. At 20 users, the difference was minor. At 200 users, one of them crumbled. Detailed Locust Test Report can be viewed using the link provided. To reproduce the test results shown below, you can run the exact load test setup using git hub repo. Or use the Colab notbook to get a gist of Python Concurrency.
+
+[![GitHub Repo](https://img.shields.io/badge/GitHub-Repo-%23121011?logo=github&logoColor=white)](https://github.com/akhil-pl/python-async-guide)
+[![View on GitHub](https://img.shields.io/badge/View-async_app_code-green?logo=github)](https://github.com/akhil-pl/python-async-guide/blob/main/sync_vs_async/async_fastapi.py)
+[![View on GitHub](https://img.shields.io/badge/View-sync_app_code-red?logo=github)](https://github.com/akhil-pl/python-async-guide/blob/main/sync_vs_async/sync_fastapi.py)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/akhil-pl/python-async-guide/blob/main/notebooks/concurrency_demo.ipynb)
 
 | Scenario       | Avg Resp. Time | Notes                     | Report |
 |----------------|----------------|----------------------------|--------|
-| Sync - 20 Users| ✅ Fast         | Comparable to async       | [View](https://www.akhil.pl/python-async-guide/sync-20-users.html) |
-| Sync - 200 Users| ❌ Slow        | Response times spiked     | [View](https://www.akhil.pl/python-async-guide/sync-200-users.html) |
-| Async - 20 Users| ✅ Fast        | Stable                    | [View](https://www.akhil.pl/python-async-guide/async-20-users.html) |
-| Async - 200 Users| ✅ Fast       | Handled load gracefully   | [View](https://www.akhil.pl/python-async-guide/async-200-users.html) |
+| Sync - 20 Users| 3,294.39 ms | Comparable to async       | [View](https://www.akhil.pl/python-async-guide/sync-20-users.html) |
+| Sync - 200 Users| **13,960.46 ms** | Response times spiked     | [View](https://www.akhil.pl/python-async-guide/sync-200-users.html) |
+| Async - 20 Users| 3,168.14 ms | Stable                    | [View](https://www.akhil.pl/python-async-guide/async-20-users.html) |
+| Async - 200 Users| 3,578.15 ms | Handled load gracefully   | [View](https://www.akhil.pl/python-async-guide/async-200-users.html) |
  
-
 Even seasoned Python developers misuse asynchronous programming. The consequences? Poor scalability, mysterious performance drops, and sluggish APIs. This post will demystify Python's concurrency model, clarify common misconceptions, and provide practical tips to write scalable FastAPI applications.
 
 What you'll learn:
@@ -24,9 +31,21 @@ What you'll learn:
 - When to use sync vs async
 - How to avoid async anti-patterns that break your server under load
 
-Too busy⏳ to read the entire post? Checkout the A TL;DR summary given after the conclusion. This post assumes that you have a basic understanding of the terms like Concurrency, Parallelism, GIL, Thread, Coroutine etc, and uses them mostly without any definition. If you have any confusion there is a Glossery session at the end where these terms are explained in details, please reffer that.
+Too busy⏳ to read the entire post? Checkout the TL;DR summary given below, else better to skip that. This post assumes that you have a basic understanding of the terms like Concurrency, Parallelism, GIL, Thread, Coroutine etc, and uses them mostly without any definition. If you have any confusion there is a Glossery session at the end where these terms are explained in details, please reffer that.
 
----
+## 🧵 TL;DR – Why Your FastAPI App Isn’t Fast (Under Load)
+- Python has a Global Interpreter Lock (GIL), which prevents true parallel execution in threads.
+- FastAPI is built on ASGI and supports high concurrency using async/await.
+- `def` endpoints are run in a ThreadPoolExecutor to avoid blocking the event loop — but thread pools are limited and can be exhausted under load.
+- `async def` endpoints run on the event loop and can handle thousands of I/O-bound requests — if all I/O is done with non-blocking await calls.
+- Calling sync/blocking code (like requests.get()) inside async def freezes the event loop, defeating FastAPI’s concurrency benefits.
+- For CPU-heavy tasks, even async won’t help — use run_in_executor(), BackgroundTasks, or tools like Celery.
+
+> ✅ Use async def + proper awaitable libraries for I/O
+> 🔁 Offload CPU work to threads or background workers
+> 🚫 Never block the event loop!
+
+
 
 ## 🔍 How Python Executes Code
 
@@ -91,6 +110,7 @@ This dance of pausing and resuming enables massive concurrency without spawning 
 
 ### 🧪 Async vs Sync Side-by-Side
 Here is acomparison between Asyc
+
 | Feature | `def` (Sync) | `async def` (Async) |
 |----------|----------|----------|
 | Execution model  | Thread in a thread pool  |  Coroutine in event loop  |
@@ -188,22 +208,6 @@ async def concurrent():
 ```
 Here all three coroutines are scheduled at the same time. Total time ≈ the time taken by the slowest one, not the sum.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ## ✅ Conclusion: Making FastAPI Truly Fast
 FastAPI is built for speed — but getting that speed in real-world applications isn’t automatic. It requires you to understand Python’s concurrency model, and to write your endpoints with care. Python's GIL limits true parallelism, so FastAPI relies on async/await and the ASGI event loop for efficient concurrency. def routes are pushed to a limited thread pool, while async def routes shine when used with non-blocking I/O. But misuse — like calling sync functions in async code or handling CPU-heavy tasks without offloading — can kill performance.
 
@@ -214,6 +218,9 @@ FastAPI is built for speed — but getting that speed in real-world applications
 By understanding how FastAPI works under the hood — and how Python handles concurrency — you can build APIs that stay fast under load, remain responsive, and scale cleanly.
 
 ---
+Would love your thoughts, corrections, or contributions. If this helped, share it with your team and help them avoid performance traps too!
+---
+
 
 ## 📚 Appendix: Glossary
 
@@ -308,6 +315,3 @@ User request ➝ FastAPI ➝
 ```
 
 ---
-
-Would love your thoughts, corrections, or contributions. If this helped, share it with your team and help them avoid performance traps too!
-
